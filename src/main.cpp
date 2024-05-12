@@ -1,10 +1,12 @@
 #include <QTRSensors.h>
 #include <Arduino.h>
 #include <PID_v1.h>
+#include <HCSR04.h>
 
-#define Kp 0.01
-#define Ki 0.001
-#define Kd 0.002
+
+#define Kp 1
+#define Ki 1
+#define Kd 2
 
 #define RIGHT_MOTOR_IN1 6
 #define RIGHT_MOTOR_IN2 5
@@ -14,15 +16,16 @@
 #define LEFT_MOTOR_IN2 4
 #define LEFT_MOTOR_ENB 2
 
-#define THRESHOLD 1000
+//#define THRESHOLD 1000
 
-// #define left_trig_pin 
-// #define left_echo_pin
-// #define mid_trig_pin
-// #define mid_echo_pin
-// #define right_trig_pin
-// #define right_echo_pin
+#define left_trig_pin 31
+#define left_echo_pin 33
+#define mid_trig_pin 35
+#define mid_echo_pin 37
+#define right_trig_pin 39
+#define right_echo_pin 41
 
+int(yesiloku) = 0;
 QTRSensors qtr;
 bool line = true; // true = white, false = black
 const uint8_t sensor_count = 8;
@@ -30,9 +33,12 @@ unsigned int sensor_values[sensor_count];
 int last_error = 0;
 
 double set_point = 3500, input, output;
-double turn_input, turn_output, turn_set_point = 500;
 PID myPID(&input, &output, &set_point, Kp, Ki, Kd, DIRECT);
-PID turnPID(&turn_input, &turn_output, &turn_set_point, Kp, Ki, Kd, DIRECT);
+
+UltraSonicDistanceSensor left_distance_sensor(left_trig_pin, left_echo_pin, 400);  // Initialize sensor that uses digital pins 13 and 12.
+UltraSonicDistanceSensor mid_distance_sensor(mid_trig_pin, mid_echo_pin, 400);  // Initialize sensor that uses digital pins 13 and 12.
+UltraSonicDistanceSensor right_distance_sensor(right_trig_pin, right_echo_pin, 400);  // Initialize sensor that uses digital pins 13 and 12.
+
 
 void motor_right(int duty){
     if(duty>=0){
@@ -60,13 +66,9 @@ void motor_left(int duty){
 void motor_stop(){
     digitalWrite(RIGHT_MOTOR_IN1, LOW);
     digitalWrite(RIGHT_MOTOR_IN2, LOW);
-    digitalWrite(LEFT_MOTOR_IN1, LOW);
     digitalWrite(LEFT_MOTOR_IN2, LOW);
+    digitalWrite(LEFT_MOTOR_IN1, LOW);
 }
-
-// int distance(trig_pin, echo_pin){
-
-// }
 
 
 void surface(){
@@ -88,7 +90,7 @@ void setup()
     pinMode(LEFT_MOTOR_IN2, OUTPUT);
     pinMode(LEFT_MOTOR_ENB, OUTPUT);
 
-    myPID.SetSampleTime(10);
+    myPID.SetSampleTime(25);
 
     qtr.setTypeAnalog();
     qtr.setSensorPins((const uint8_t[]){A0, A1, A2, A3, A4, A5, A6, A7}, sensor_count);
@@ -105,57 +107,77 @@ void setup()
 
 
 }
-
-void main_code(){
-    // surface();
-    // unsigned int position;
-    // if (line) {
-    //     position = qtr.readLineWhite(sensor_values);
-    // } else {
-    //     position = qtr.readLineBlack(sensor_values);
-    // }
-    unsigned int position = qtr.readLineBlack(sensor_values);
-    // turnPID.Compute();
-    // int turn_speed = turn_output;
+// void turn_right(){
     
+//     motor_right(100 + output);
+//     //motor_left(-65 - output);
+
+// }
+void main_code(){
+    surface();
+    unsigned int position;
+    if (line) {
+        position = qtr.readLineWhite(sensor_values);
+    } else {
+        position = qtr.readLineBlack(sensor_values);
+    }
+    //unsigned int position = qtr.readLineBlack(sensor_values);
+    //Serial.println("Position: " + String(position));
+    //Serial.println("Output: " + String(output));
+    // if(sensor_values[0] > 700 && sensor_values[1] > 700 && sensor_values[2] > 700 && sensor_values[3] > 700 && sensor_values[6] < 300 && sensor_values[7]<300){
+    //     motor_stop();
+    //     delay(100);
+    //     turn_right();
+    //     delay(300);
+    // }
+
     input = position;
-    Serial.println("Position: " + String(position));
+    //Serial.println("Position: " + String(position));
     myPID.Compute();
     motor_left(100 - output);
     motor_right(100 + output);
 
-    if(position == 7000){
-        //Serial.println("icerde");
-        motor_right(100 + output);
-        delay(500);
-    }
-    
-    // if (turn_input < turn_set_point && input < set_point){
-    //     motor_right(100 + output);
-    // }else if(turn_input > turn_set_point && input > set_point){
-    //     motor_left(100 + output);
-    // }else{
-    //     motor_stop();
-
-    //     motor_right(100 + output);
-    //     delay(1000);
-    // }
-
-
-
-
-    // motor_left(100 - output);
-    // motor_right(100 + output);
-
-    
-
-    // if (sensor_values == 0){
-    //     motor_right(70 + output);
-    // }
 }
+
+
 void loop()
 {   
-   
+    // float left  = left_distance_sensor.measureDistanceCm();
+    // float mid = mid_distance_sensor.measureDistanceCm();
+    // float right = right_distance_sensor.measureDistanceCm();
+    // if(left == -1 || mid == -1 || right == -1){
+    //     return;
+    // }
+    // if((left >= 20 && left > 0) || (right>=20 && right > 0)){
+
+    //     if(left>right)
+    //     motor_left(-100 - output);
+    //     motor_right(100 + output);
+    //     while (left==right)
+    //     {
+
+    //         motor_left(80 - output);
+    //         motor_right(80 + output);
+    //         /* code */
+    //         if((left==-1) || (right==-1))
+    //         break;
+    //     }
+        
+
+    // }
+
+
+    // else if((mid <= 10 && mid > 0)){
+
+    //     motor_left(-70 - output);
+    //     motor_right(70 + output);
+    //     yesiloku=+1;
+
+
+    // }
+
     main_code();
+    
+    
 }
 
